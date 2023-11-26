@@ -2,10 +2,10 @@ import cv2 as cv
 import numpy as np
 import sys
 
-# filename = "C:/Users/nishk/cone_center.jpg"
-filename = "cone_left.jpg"
-# C:/Users/nishk/cone_right.jpg
-# C:/Users/nishk/cone_center.jpg
+# filename = "C:/Users/nishk/test8.jpg"
+filename = "test7.jpg"
+# C:/Users/nishk/test6.jpg
+# C:/Users/nishk/test8.jpg
 
 img = cv.imread(filename)
 # print(img.shape) - to check if we are reading the image
