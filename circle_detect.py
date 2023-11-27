@@ -13,9 +13,11 @@ def pipeline(image: cv2.Mat, label: str):
     # blurred = cv2.blur(scratch, (3, 3))
     colored = cv2.cvtColor(scratch, cv2.COLOR_BGR2HSV)
 
-    red_low = np.array((175, 128, 64))
+    minSat = 128
+    minVal = 32
+    red_low = np.array((175, minSat, minVal))
     red_high = np.array((180, 255, 255))
-    red_low2 = np.array((0, 128, 64))
+    red_low2 = np.array((0, minSat, minVal))
     red_high2 = np.array((5, 255, 255))
 
     gray1 = cv2.inRange(colored, red_low, red_high)
@@ -34,35 +36,73 @@ def pipeline(image: cv2.Mat, label: str):
 
     bothR = cv2.GaussianBlur(bothR, (11, 11), 5)
     bothB = cv2.GaussianBlur(gray3, (11, 11), 5)
+    # bothB = gray3
 
+    cv2.imshow(f"HSVified {label}", colored)
     cv2.imshow(f"RED {label}", bothR)
     cv2.imshow(f"BLUE {label}", bothB)
 
-    circlesRed = cv2.HoughCircles(bothR, cv2.HOUGH_GRADIENT, 1, 20,
-                               param1=50, param2=40, minRadius=0, maxRadius=0)
-    print(circlesRed)
-    if circlesRed is not None:
-        circlesRed = np.uint16(np.round(circlesRed))
-        for i in circlesRed[0, :]:
-            cv2.circle(image, (i[0], i[1]), i[2], (0, 128, 255), 2)
-            cv2.circle(image, (i[0], i[1]), 2, (0, 128, 255), 3)
-    else:
-        print("No RED circles found.")
+    v_third = int(scratch.shape[0] / 3)
+    h_third = int(scratch.shape[1] / 3)
+    v_fourth = int(scratch.shape[0] / 4)
+    v_bot = scratch.shape[0] - v_fourth
+    red_left = bothR[v_third:v_bot, :h_third]
+    red_center = bothR[v_third:v_bot, h_third:2*h_third]
+    red_right = bothR[v_third:v_bot, h_third*2:]
+    blue_left = bothB[v_third:v_bot, :h_third]
+    blue_center = bothB[v_third:v_bot, h_third:2*h_third]
+    blue_right = bothB[v_third:v_bot, h_third*2:]
 
-    circlesBlue = cv2.HoughCircles(bothB, cv2.HOUGH_GRADIENT, 1, 20,
-                               param1=50, param2=40, minRadius=0, maxRadius=0)
-    print(circlesBlue)
-    if circlesBlue is not None:
-        circlesBlue = np.uint16(np.round(circlesBlue))
-        for i in circlesBlue[0, :]:
-            cv2.circle(image, (i[0], i[1]), i[2], (255, 128, 0), 2)
-            cv2.circle(image, (i[0], i[1]), 2, (255, 128, 0), 3)
-    else:
-        print("No BLUE circles found.")
-    cv2.imshow(label, image)
+    red_left_c = cv2.countNonZero(red_left)
+    red_center_c = cv2.countNonZero(red_center)
+    red_right_c = cv2.countNonZero(red_right)
+    blue_left_c = cv2.countNonZero(blue_left)
+    blue_center_c = cv2.countNonZero(blue_center)
+    blue_right_c = cv2.countNonZero(blue_right)
+
+    left_merge = cv2.cvtColor(red_left, cv2.COLOR_GRAY2BGR)
+    left_merge[:, :, 2] = red_left[:, :]
+    left_merge[:, :, 1] = 0
+    left_merge[:, :, 0] = blue_left[:, :]
+    cv2.imshow(f"Left {label}", left_merge)
+    center_merge = cv2.cvtColor(red_center, cv2.COLOR_GRAY2BGR)
+    center_merge[:, :, 2] = red_center[:, :]
+    center_merge[:, :, 1] = 0
+    center_merge[:, :, 0] = blue_center[:, :]
+    cv2.imshow(f"Center {label}", center_merge)
+    right_merge = cv2.cvtColor(red_right, cv2.COLOR_GRAY2BGR)
+    right_merge[:, :, 2] = red_right[:, :]
+    right_merge[:, :, 1] = 0
+    right_merge[:, :, 0] = blue_right[:, :]
+    cv2.imshow(f"Right {label}", right_merge)
+
+    print(f"Red : {red_left_c:5d} {red_center_c:5d} {red_right_c:5d}")
+    print(f"Blue: {blue_left_c:5d} {blue_center_c:5d} {blue_right_c:5d}")
+    # circlesRed = cv2.HoughCircles(bothR, cv2.HOUGH_GRADIENT, 1, 20,
+    #                            param1=50, param2=40, minRadius=0, maxRadius=0)
+    # print(circlesRed)
+    # if circlesRed is not None:
+    #     circlesRed = np.uint16(np.round(circlesRed))
+    #     for i in circlesRed[0, :]:
+    #         cv2.circle(image, (i[0], i[1]), i[2], (0, 128, 255), 2)
+    #         cv2.circle(image, (i[0], i[1]), 2, (0, 128, 255), 3)
+    # else:
+    #     print("No RED circles found.")
+    #
+    # circlesBlue = cv2.HoughCircles(bothB, cv2.HOUGH_GRADIENT, 1, 20,
+    #                            param1=50, param2=40, minRadius=0, maxRadius=0)
+    # print(circlesBlue)
+    # if circlesBlue is not None:
+    #     circlesBlue = np.uint16(np.round(circlesBlue))
+    #     for i in circlesBlue[0, :]:
+    #         cv2.circle(image, (i[0], i[1]), i[2], (255, 128, 0), 2)
+    #         cv2.circle(image, (i[0], i[1]), 2, (255, 128, 0), 3)
+    # else:
+    #     print("No BLUE circles found.")
+    # cv2.imshow(label, image)
 
 
-for x in range(9, 14):
+for x in range(21, 22):
     if os.path.exists(f"test{x}.png"):
         path = f"test{x}.png"
     elif os.path.exists(f"test{x}.jpg"):
